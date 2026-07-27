@@ -199,6 +199,106 @@ classDiagram
     AuthService --> UserRepository
     ContactService --> ContactRepository
 ```
+---
+ 
+# Database Schema
+ 
+The application uses **SQLAlchemy 2.0 ORM** with **SQLite** as the default database (configurable via `DATABASE_URL`). The schema consists of **7 normalized tables** supporting authentication, contacts, conversations, messaging, reactions, and read receipts.
+ 
+```mermaid
+erDiagram
+    USERS {
+        INT id PK
+        STRING username
+        STRING phone
+        STRING display_name
+        STRING avatar_color
+        STRING avatar_url
+        STRING about
+        BOOLEAN is_verified
+        BOOLEAN online
+        DATETIME last_seen
+        DATETIME created_at
+    }
+    CONTACTS {
+        INT id PK
+        INT user_id FK
+        INT contact_user_id FK
+        DATETIME created_at
+    }
+    CONVERSATIONS {
+        INT id PK
+        BOOLEAN is_group
+        STRING name
+        STRING avatar_color
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    CONVERSATION_MEMBERS {
+        INT id PK
+        INT conversation_id FK
+        INT user_id FK
+        BOOLEAN is_admin
+        DATETIME joined_at
+    }
+    MESSAGES {
+        INT id PK
+        INT conversation_id FK
+        INT sender_id FK
+        TEXT content
+        STRING content_type
+        STRING attachment_url
+        INT reply_to_id FK
+        DATETIME created_at
+    }
+    MESSAGE_RECEIPTS {
+        INT id PK
+        INT message_id FK
+        INT user_id FK
+        STRING status
+        DATETIME updated_at
+    }
+    MESSAGE_REACTIONS {
+        INT id PK
+        INT message_id FK
+        INT user_id FK
+        STRING emoji
+        DATETIME created_at
+    }
+    USERS ||--o{ CONTACTS : owns
+    USERS ||--o{ CONTACTS : contact
+    USERS ||--o{ CONVERSATION_MEMBERS : joins
+    CONVERSATIONS ||--o{ CONVERSATION_MEMBERS : contains
+    CONVERSATIONS ||--o{ MESSAGES : has
+    USERS ||--o{ MESSAGES : sends
+    MESSAGES ||--o| MESSAGES : replies_to
+    MESSAGES ||--o{ MESSAGE_RECEIPTS : tracked_by
+    USERS ||--o{ MESSAGE_RECEIPTS : reads
+    MESSAGES ||--o{ MESSAGE_REACTIONS : receives
+    USERS ||--o{ MESSAGE_REACTIONS : reacts
+```
+ 
+### Schema Overview
+ 
+| Table | Description |
+|--------|-------------|
+| **users** | Stores user accounts, authentication information, profile details, and presence status. |
+| **contacts** | Directed relationship representing each user's personal contact list. |
+| **conversations** | Represents both one-to-one and group chats using a unified conversation model. |
+| **conversation_members** | Many-to-many mapping between users and conversations with group admin support. |
+| **messages** | Stores all chat messages, including replies and media attachments. |
+| **message_receipts** | Tracks delivery and read status for every recipient of a message. |
+| **message_reactions** | Stores emoji reactions added by users to messages. |
+ 
+### Design Highlights
+ 
+- **Unified Conversation Model** – Direct and group chats share the same conversation table, simplifying message handling and API design.
+- **Reply Threading** – Self-referencing messages enable reply functionality.
+- **Per-Recipient Read Receipts** – Delivery states (`Sent → Delivered → Read`) are maintained individually for each recipient.
+- **Directed Contact Graph** – Contacts are intentionally one-way; adding a contact does not automatically create a reciprocal relationship.
+- **Media Support** – Messages support both text and image content through `content_type` and `attachment_url`.
+- **Scalable ORM Design** – Built with SQLAlchemy 2.0 using declarative models, making it straightforward to migrate from SQLite to PostgreSQL or another production database.
+---
 
 ---
 

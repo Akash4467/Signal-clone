@@ -292,3 +292,15 @@ The project is deployed using
 - Push Notifications
 - PostgreSQL Support
 - Kubernetes Deployment
+---
+
+# Evidence
+
+The repository includes an **`evidence/`** folder containing supporting artifacts for the project, including:
+
+- Application testing screenshots
+- API testing evidence (Swagger/Postman)
+- Real-time chat demonstration
+- End-to-end application verification
+
+These artifacts provide evidence of the implemented features and successful deployment.
